@@ -10,8 +10,12 @@
     <ConfirmationsSetting value="0" id="Add" />
     <ConfirmationsSetting value="0" id="Remove" />
   </component>
+<<<<<<< HEAD
   <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.5.1 (/Library/Frameworks/Python.framework/Versions/3.5/bin/python3.5)" project-jdk-type="Python SDK" />
   <component name="SvnBranchConfigurationManager">
     <option name="mySupportsUserInfoFilter" value="true" />
   </component>
+=======
+  <component name="ProjectRootManager" version="2" project-jdk-name="Python 3.5.1 (C:\Users\Luke\AppData\Local\Programs\Python\Python35-32\python.exe)" project-jdk-type="Python SDK" />
+>>>>>>> 5b31b932e494c27a6b691b8ad40736e669509d61
 </project>
