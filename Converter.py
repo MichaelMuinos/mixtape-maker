@@ -3,6 +3,10 @@ from tkinter import *
 import youtube_dl
 import urllib
 import re
+import os
+import shutil
+import threading
+import queue as Queue
 import io
 
 youtube_dl_options = {
@@ -13,6 +17,9 @@ youtube_dl_options = {
         'preferredquality': '192',
     }]
 }
+
+song_list = []
+desktop_path = "/Users/michael/Desktop/"
 
 
 class GUI:
@@ -35,16 +42,17 @@ class GUI:
 
     def download_button_click(self):
         buffer = io.StringIO()
+        # print("Starting download...", file=buffer)
+        # self.update_text_widget(buffer)
 
-        print("Starting download...", file=buffer)
-        self.update_text_widget(buffer)
-
+        global song_list
         song_list = self.read_file(self.entry.get())
-        video_urls = self.find_video_urls(song_list, buffer)
-        self.download_videos(video_urls, buffer)
+        self.queue = Queue
+        DownloadVideosThread(self.queue).start()
+        self.master.after(100, self.update_text_widget(buffer))
 
-        print("All downloads complete!", file=buffer)
-        self.update_text_widget(buffer)
+        # print("All downloads complete!", file=buffer)
+        # self.update_text_widget(buffer)
 
     def update_text_widget(self, buffer):
         output = buffer.getvalue()
@@ -52,16 +60,31 @@ class GUI:
         self.text.see(END)
 
     def read_file(self, file_name):
-        with open(file_name, "r") as f:
+        global desktop_path
+        file = desktop_path + file_name
+        with open(file, "r") as f:
             songs = f.read().splitlines()
+        desktop_path += songs.pop(0) + "/"
         return songs
 
-    def find_video_urls(self, songs, buffer):
+
+class DownloadVideosThread(threading.Thread):
+    def __init__(self, queue):
+        threading.Thread.__init__(self)
+        self.queue = queue
+
+    def run(self):
+        video_urls = self.find_video_urls(song_list)
+        self.download_videos(video_urls, song_list)
+        self.create_desktop_directory(song_list)
+
+    def find_video_urls(self, songs):
         videos = list()
-        index = 1
+        # index = 1
         for song in songs:
-            print("Song #" + str(index) + ": " + song, file=buffer)
-            self.update_text_widget(buffer)
+            
+            # print("Song #" + str(index) + ": " + song, file=buffer)
+            # self.update_text_widget(buffer)
 
             query_string = urllib.parse.urlencode({"search_query": song})
             html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
@@ -71,11 +94,32 @@ class GUI:
                 videos.append("https://www.youtube.com/watch?v=" + search_results[0])
         return videos
 
-    def download_videos(self, urls, buffer):
+    def download_videos(self, urls, songs):
+        index = 0
         for url in urls:
             with youtube_dl.YoutubeDL(youtube_dl_options) as ydl:
+                song = songs[index].split('-')
                 ydl.download([url])
-        print("Downloads Complete")
+                file = ydl.prepare_filename({'title': song[0], 'ext': 'mp3', 'id': song[1]})
+                print(file)
+            index += 1
+            # print("Downloads Complete")
+
+    def create_desktop_directory(self, songs):
+        if not os.path.exists(desktop_path):
+            os.makedirs(desktop_path)
+            print(desktop_path)
+
+        program_path = "/Users/michael/PycharmProjects/MixtapeMaker/"
+        contents = os.listdir(program_path)
+
+        song_number = 0
+        for content_part in contents:
+            filename, file_extension = os.path.splitext(program_path + content_part)
+            if file_extension == ".mp3":
+                shutil.move(program_path + content_part, desktop_path + songs[song_number] + ".mp3")
+                song_number += 1
+
 
 root = Tk()
 root.resizable(width=False, height=False)
