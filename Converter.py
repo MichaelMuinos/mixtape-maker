@@ -1,14 +1,14 @@
 from __future__ import unicode_literals
 from tkinter import *
-import urllib
+import urllib.parse
+import urllib.request
 import re
 import threading
 import getpass
 import subprocess
 
 song_list = []
-# desktop_path = "C:\\Users\\Luke\\Desktop\\"
-desktop_path = "/Users/" + getpass.getuser() + "/Desktop/"
+desktop_path = "C:\\Users\\" + getpass.getuser() + "\\Desktop\\"
 
 '''
 The following class creates the GUI for interacting in the command line with youtube dl. The inputs include a file name
@@ -73,7 +73,7 @@ class GUI:
             songs = f.read().splitlines()
 
         # set new path to include the title of the mixtape as the subdirectory
-        desktop_path += self.entry_title.get() + "/"
+        desktop_path += self.entry_title.get() + "\\"
 
         self.update_text_widget("\nFound " + str(len(songs)) + " songs!")
 
@@ -136,10 +136,13 @@ class DownloadVideosThread(threading.Thread):
         for url in urls:
             self.update_text_widget("\nSong - " + songs[index]
                                     + " - Extracting audio from video at " + url + " ...")
-            
+
+            # set flags to ensure the console does not pop up
+            no_console = subprocess.STARTUPINFO()
+            no_console.dwFlags |= subprocess.STARTF_USESHOWWINDOW
             # command line to do downloads
-            subprocess.call(['youtube-dl', '-o', desktop_path + songs[index] + '.mp3',
-                 "--extract-audio", "--audio-format", "mp3", url])
+            subprocess.call(['youtube-dl', '-o', desktop_path + songs[index] + ".%(ext)s",
+                 "--extract-audio", "--audio-format", "mp3", url], startupinfo=no_console)
 
             self.update_text_widget("\nSong - " + songs[index] + " - Download complete!")
             index += 1
