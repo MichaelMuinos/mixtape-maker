@@ -1,28 +1,20 @@
 from __future__ import unicode_literals
 from tkinter import *
-import youtube_dl
 import urllib
 import re
-import os
-import shutil
 import threading
 import getpass
 import subprocess
-
-youtube_dl_options = {
-    'format': 'bestaudio/best',
-    'postprocessors': [{
-        'key': 'FFmpegExtractAudio',
-        'preferredcodec': 'mp3',
-        'preferredquality': '192',
-    }]
-}
 
 song_list = []
 # desktop_path = "C:\\Users\\Luke\\Desktop\\"
 desktop_path = "/Users/" + getpass.getuser() + "/Desktop/"
 
-
+'''
+The following class creates the GUI for interacting in the command line with youtube dl. The inputs include a file name
+for the song list, followed by the title of the desired mixtape. As the downloads happen, messages will pop out to the user
+to show them there downloads are in progress.
+'''
 class GUI:
     def __init__(self, master):
         self.master = master
@@ -53,33 +45,54 @@ class GUI:
         self.text = Text(master)
         self.text.pack()
 
+    '''
+    On button click, read the inputted file line by line and retrieve all songs. Then start
+    a seperate thread.
+    '''
     def download_button_click(self):
         global song_list
+        # read file user has entered in entry box one
         song_list = self.read_file(self.entry.get())
 
-        thread = DownloadVideosThread(self.text)
-        thread.start()
+        # tkinter is single threaded, thus start a seperate thread for the download process
+        DownloadVideosThread(self.text).start()
 
+    '''
+    Processes the users inputted title for the mixtape and creates a folder on the desktop.
+    Reads each line of the file and stores the songs in a list.
+    '''
     def read_file(self, file_name):
         global desktop_path
+        # path to read text file
         file = desktop_path + file_name
 
         self.update_text_widget("Reading file " + self.entry.get())
 
+        # read contents of file
         with open(file, "r") as f:
             songs = f.read().splitlines()
-        # change to "\\" for windows
+
+        # set new path to include the title of the mixtape as the subdirectory
         desktop_path += self.entry_title.get() + "/"
 
         self.update_text_widget("\nFound " + str(len(songs)) + " songs!")
 
         return songs
 
+    '''
+    Update text to the tkinter widget to inform user what is happening.
+    '''
     def update_text_widget(self, message):
+        # Update text to text widget
         self.text.insert(END, message)
+        # Move to the end of the text box if text has gone outside the initial length
         self.text.see(END)
 
 
+'''
+The following class runs on a seperate thread for searching youtube results and downloading
+the songs.
+'''
 class DownloadVideosThread(threading.Thread):
     def __init__(self, text):
         threading.Thread.__init__(self)
@@ -88,12 +101,14 @@ class DownloadVideosThread(threading.Thread):
     def run(self):
         video_urls = self.find_video_urls(song_list)
         self.download_videos(video_urls, song_list)
-        # self.create_desktop_directory(song_list)
 
     def update_text_widget(self, message):
         self.text.insert(END, message)
         self.text.see(END)
 
+    '''
+    Query youtube results based on the songs entered in the text file
+    '''
     def find_video_urls(self, songs):
         videos = list()
         for song in songs:
@@ -101,48 +116,35 @@ class DownloadVideosThread(threading.Thread):
 
             query_string = urllib.parse.urlencode({"search_query": song})
             html_content = urllib.request.urlopen("http://www.youtube.com/results?" + query_string)
+
+            # retrieve all videos that met the song name criteria
             search_results = re.findall(r'href=\"\/watch\?v=(.{11})', html_content.read().decode())
 
+            # only take the top result
             if len(search_results) is not 0:
                 videos.append("https://www.youtube.com/watch?v=" + search_results[0])
                 self.update_text_widget("\nSong - " + song + " - Found top result!")
 
         return videos
 
+    '''
+    Call command line for youtube dl. Sets the output directory for downloaded files.
+    '''
     def download_videos(self, urls, songs):
         self.update_text_widget("\n\nStarting downloads ...")
         index = 0
         for url in urls:
             self.update_text_widget("\nSong - " + songs[index]
                                     + " - Extracting audio from video at " + url + " ...")
-            '''with youtube_dl.YoutubeDL(youtube_dl_options) as ydl:
-                ydl.download([url])'''
-            subprocess.call(
-                ['youtube-dl', '-o', desktop_path + songs[index] + '.mp3',
+            
+            # command line to do downloads
+            subprocess.call(['youtube-dl', '-o', desktop_path + songs[index] + '.mp3',
                  "--extract-audio", "--audio-format", "mp3", url])
 
             self.update_text_widget("\nSong - " + songs[index] + " - Download complete!")
             index += 1
 
         self.update_text_widget("\n\nAll downloads complete! Check your desktop for your mixtape!")
-
-    '''def create_desktop_directory(self, songs):
-        self.update_text_widget("\n\nPushing mixtape to desktop ...")
-
-        if not os.path.exists(desktop_path):
-            os.makedirs(desktop_path)
-
-        # program_path = "C:\\Users\\Luke\\PycharmProjects\\MixtapeMaker\\"
-        program_path = "/Users/michael/PycharmProjects/MixtapeMaker/"
-        contents = os.listdir(program_path)
-
-        song_number = 0
-        for content_part in contents:
-            filename, file_extension = os.path.splitext(program_path + content_part)
-            if file_extension == ".mp3":
-                shutil.move(program_path + content_part, desktop_path + songs[song_number] + ".mp3")
-                song_number += 1
-        self.update_text_widget("\nMixtape is complete, enjoy!")'''
 
 root = Tk()
 root.resizable(width=False, height=False)
