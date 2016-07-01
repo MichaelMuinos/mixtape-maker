@@ -5,4 +5,4 @@
 ## How do I use it?
 ###### In order to use it, **you must have youtube-dl installed**. Also, **you must be a windows user**.
 ###### Simply use the executable after installation.
-https://github.com/JustPlainGoat/Mix-Tape-Maker/blob/master/dist/Converter.exe
+(Click view raw) https://github.com/JustPlainGoat/Mix-Tape-Maker/blob/master/dist/Converter.exe
