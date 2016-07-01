@@ -4,11 +4,11 @@ import urllib.parse
 import urllib.request
 import re
 import threading
-import getpass
+import os
 import subprocess
 
 song_list = []
-desktop_path = "C:\\Users\\" + getpass.getuser() + "\\Desktop\\"
+desktop_path = os.path.expanduser('~') + '\\Desktop\\'
 
 '''
 The following class creates the GUI for interacting in the command line with youtube dl. The inputs include a file name
@@ -136,7 +136,6 @@ class DownloadVideosThread(threading.Thread):
         for url in urls:
             self.update_text_widget("\nSong - " + songs[index]
                                     + " - Extracting audio from video at " + url + " ...")
-
             # set flags to ensure the console does not pop up
             no_console = subprocess.STARTUPINFO()
             no_console.dwFlags |= subprocess.STARTF_USESHOWWINDOW
